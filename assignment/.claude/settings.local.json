@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(python scripts/verify.py:*)",
+      "Bash(python:*)",
+      "Bash(tree:*)",
+      "Bash(pip install:*)",
+      "Bash(uv run pytest:*)"
+    ]
+  }
+}
