@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """Verify FastAPI skill SKILL.md structure and syntax."""
-import os
 import re
 import sys
 from pathlib import Path

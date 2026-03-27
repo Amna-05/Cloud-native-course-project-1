@@ -105,7 +105,7 @@ def main():
     issues, word_count, stage_analysis = check_structure(content)
 
     if args.verbose:
-        print(f"\nPost Analysis (verbose):")
+        print("\nPost Analysis (verbose):")
         print(f"  Word count: {word_count}")
         print(f"  Funnel stage indicators: {stage_analysis}")
 

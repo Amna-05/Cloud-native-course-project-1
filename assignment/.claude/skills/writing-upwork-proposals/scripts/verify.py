@@ -138,7 +138,7 @@ def main():
     issues, word_count, bullet_count = check_proposal_quality(content)
 
     if args.verbose:
-        print(f"\nProposal Analysis (verbose):")
+        print("\nProposal Analysis (verbose):")
         print(f"  Word count: {word_count}")
         print(f"  Deliverable bullets: {bullet_count}")
 
@@ -151,11 +151,11 @@ def main():
     else:
         print(f"✓ Upwork proposal meets winning standards ({word_count} words, {bullet_count} bullets)")
         if args.verbose:
-            print(f"  ✓ Has specific problem mention")
-            print(f"  ✓ Has deliverable bullets")
-            print(f"  ✓ Has first milestone")
-            print(f"  ✓ Has proof point")
-            print(f"  ✓ Mobile-friendly format")
+            print("  ✓ Has specific problem mention")
+            print("  ✓ Has deliverable bullets")
+            print("  ✓ Has first milestone")
+            print("  ✓ Has proof point")
+            print("  ✓ Mobile-friendly format")
         sys.exit(0)
 
 if __name__ == "__main__":
