@@ -5,7 +5,7 @@ from sqlmodel import Session, select
 from datetime import datetime
 from contextlib import asynccontextmanager
 
-from task_api.database import create_db_and_tables, engine, get_session
+from task_api.database import create_db_and_tables, get_session
 from task_api.models import Task, TaskCreate, TaskRead, TaskUpdate
 
 # Lifespan events
