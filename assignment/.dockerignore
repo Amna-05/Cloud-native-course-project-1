@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+tests/
+.claude/
+*.db
+.env
+README.md
+pytest.ini

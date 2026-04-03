@@ -1,9 +1,11 @@
 """FastAPI Task Management API - Main application."""
-from fastapi import FastAPI, HTTPException, Depends
+from contextlib import asynccontextmanager
+from datetime import datetime
+from typing import Optional
+
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
-from datetime import datetime
-from contextlib import asynccontextmanager
 
 from task_api.database import create_db_and_tables, get_session
 from task_api.models import Task, TaskCreate, TaskRead, TaskUpdate
@@ -58,7 +60,7 @@ def list_tasks(
     session: Session = Depends(get_session),
     skip: int = 0,
     limit: int = 10,
-    completed: bool = None
+    completed: Optional[bool] = None
 ):
     """List all tasks with optional filtering."""
     query = select(Task)
