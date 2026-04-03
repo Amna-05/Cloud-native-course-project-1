@@ -1,62 +1,49 @@
-"""Pytest configuration and shared fixtures."""
+"""Pytest configuration and shared fixtures.
+
+Strategy:
+- Each test gets a fresh in-memory SQLite engine (function-scoped).
+  This guarantees complete isolation — no rollback tricks, no state leaking
+  between tests, and no external services required (CI-safe).
+- The FastAPI dependency `get_session` is overridden to inject the test session.
+"""
+
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import SQLModel, Session, create_engine
 from sqlmodel.pool import StaticPool
 
-from task_api.main import app
 from task_api.database import get_session
+from task_api.main import app
 
-# Test database
-@pytest.fixture(scope="session")
-def engine():
-    """Create in-memory SQLite test database."""
+
+@pytest.fixture(name="engine")
+def engine_fixture():
+    """Fresh in-memory SQLite engine per test — fully isolated."""
     engine = create_engine(
         "sqlite:///:memory:",
         connect_args={"check_same_thread": False},
         poolclass=StaticPool,
     )
     SQLModel.metadata.create_all(engine)
-    return engine
+    yield engine
+    SQLModel.metadata.drop_all(engine)
 
-@pytest.fixture
-def session(engine):
-    """Provide test database session with automatic rollback for isolation."""
-    connection = engine.connect()
-    transaction = connection.begin()
-    session = Session(bind=connection)
 
-    yield session
+@pytest.fixture(name="session")
+def session_fixture(engine):
+    """Database session bound to the test engine."""
+    with Session(engine) as session:
+        yield session
 
-    session.close()
-    transaction.rollback()
-    connection.close()
 
-@pytest.fixture
-def client(session):
-    """Provide FastAPI test client with mocked database."""
-    def get_session_override():
+@pytest.fixture(name="client")
+def client_fixture(session):
+    """TestClient with the test session injected via dependency override."""
+
+    def _get_session_override():
         return session
 
-    app.dependency_overrides[get_session] = get_session_override
-    client = TestClient(app)
-    yield client
+    app.dependency_overrides[get_session] = _get_session_override
+    with TestClient(app) as client:
+        yield client
     app.dependency_overrides.clear()
-
-@pytest.fixture
-def sample_task():
-    """Sample task data for testing."""
-    return {
-        "title": "Test Task",
-        "description": "A test task for unit testing",
-        "completed": False
-    }
-
-@pytest.fixture
-def sample_task_completed():
-    """Sample completed task for testing."""
-    return {
-        "title": "Completed Task",
-        "description": "A completed task",
-        "completed": True
-    }
