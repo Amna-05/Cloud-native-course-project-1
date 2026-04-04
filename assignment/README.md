@@ -20,19 +20,19 @@ A production-grade FastAPI CRUD application with a fully automated CI/CD pipelin
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| API | FastAPI 0.104 |
-| ORM / Validation | SQLModel 0.0.14 (SQLAlchemy 2.x + Pydantic 2.x) |
-| Database (dev/test) | SQLite in-memory |
-| Database (production) | Supabase (PostgreSQL) |
-| Linting | Ruff 0.4.4 |
-| Type checking | mypy 1.8 |
-| Testing | pytest 7.4 + httpx + pytest-cov |
-| Container | Docker (python:3.12-slim) |
-| CI/CD | GitHub Actions |
-| Registry | AWS ECR |
-| Runtime | AWS ECS Fargate |
+| Layer                 | Technology                                      |
+| --------------------- | ----------------------------------------------- |
+| API                   | FastAPI 0.104                                   |
+| ORM / Validation      | SQLModel 0.0.14 (SQLAlchemy 2.x + Pydantic 2.x) |
+| Database (dev/test)   | SQLite in-memory                                |
+| Database (production) | Supabase (PostgreSQL)                           |
+| Linting               | Ruff 0.4.4                                      |
+| Type checking         | mypy 1.8                                        |
+| Testing               | pytest 7.4 + httpx + pytest-cov                 |
+| Container             | Docker (python:3.12-slim)                       |
+| CI/CD                 | GitHub Actions                                  |
+| Registry              | AWS ECR                                         |
+| Runtime               | AWS ECS Fargate                                 |
 
 ---
 
@@ -76,14 +76,14 @@ Swagger UI at `http://localhost:8000/docs`
 
 ### API Endpoints
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/health` | Health check |
-| POST | `/tasks/` | Create task |
-| GET | `/tasks/` | List tasks (pagination + filter by completed) |
-| GET | `/tasks/{id}` | Get single task |
-| PUT | `/tasks/{id}` | Update task (partial updates supported) |
-| DELETE | `/tasks/{id}` | Delete task |
+| Method | Endpoint      | Description                                   |
+| ------ | ------------- | --------------------------------------------- |
+| GET    | `/health`     | Health check                                  |
+| POST   | `/tasks/`     | Create task                                   |
+| GET    | `/tasks/`     | List tasks (pagination + filter by completed) |
+| GET    | `/tasks/{id}` | Get single task                               |
+| PUT    | `/tasks/{id}` | Update task (partial updates supported)       |
+| DELETE | `/tasks/{id}` | Delete task                                   |
 
 ---
 
@@ -207,6 +207,7 @@ aws iam attach-role-policy \
 ```
 
 > **Gotcha:** If the role exists but tasks fail with `ECS was unable to assume the role`, the trust relationship is wrong. Fix it:
+>
 > ```bash
 > aws iam update-assume-role-policy \
 >   --role-name ecsTaskExecutionRole \
@@ -425,21 +426,21 @@ Create a dedicated IAM user (`github-actions-deployer`) with programmatic access
 
 ### Secrets (Settings → Secrets and variables → Actions → Secrets)
 
-| Name | Value |
-|---|---|
-| `AWS_ACCESS_KEY_ID` | github-actions-deployer access key ID |
+| Name                    | Value                                     |
+| ----------------------- | ----------------------------------------- |
+| `AWS_ACCESS_KEY_ID`     | github-actions-deployer access key ID     |
 | `AWS_SECRET_ACCESS_KEY` | github-actions-deployer secret access key |
 
 ### Variables (same page → Variables tab)
 
-| Name | Value |
-|---|---|
-| `AWS_REGION` | your AWS region |
-| `ECR_REPOSITORY` | `task-api` |
-| `ECS_CLUSTER` | `task-api-cluster` |
-| `ECS_SERVICE` | `task-api-service` |
-| `ECS_TASK_DEFINITION` | `task-api-task` |
-| `CONTAINER_NAME` | `task-api` |
+| Name                  | Value              |
+| --------------------- | ------------------ |
+| `AWS_REGION`          | your AWS region    |
+| `ECR_REPOSITORY`      | `task-api`         |
+| `ECS_CLUSTER`         | `task-api-cluster` |
+| `ECS_SERVICE`         | `task-api-service` |
+| `ECS_TASK_DEFINITION` | `task-api-task`    |
+| `CONTAINER_NAME`      | `task-api`         |
 
 > `DATABASE_URL` is set inside the ECS task definition — GitHub Actions never handles it.
 
@@ -448,15 +449,18 @@ Create a dedicated IAM user (`github-actions-deployer`) with programmatic access
 ## Database
 
 ### Development / Testing
+
 SQLite is used automatically with no configuration. The `tasks.db` file is git-ignored.
 
 ### Production (Supabase)
-Set the `DATABASE_URL` environment variable in the ECS task definition:
+
+Set the `DATABASE_URL` environment variable in the ECS task definition: [ preferred ot use aws secret to save then in task-definition (best practice ) :]
 
 ```
 postgresql://USER:PASSWORD@HOST:5432/DATABASE
 ```
 
 The app handles:
+
 - `postgres://` → `postgresql://` URL normalisation (SQLAlchemy 2.x requirement)
 - `pool_pre_ping=True` to recover from idle connection drops (Supabase closes idle connections after ~5 minutes)
