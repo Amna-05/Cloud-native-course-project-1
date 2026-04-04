@@ -1,0 +1,84 @@
+SESSION SUMMARY
+===============
+Project: Task Management API — CI/CD Pipeline Setup
+Date: 2026-04-04
+
+WHAT WAS DONE
+-------------
+
+1. TEST SUITE REWRITE
+   - Replaced manual/live-server test scripts with proper pytest suite
+   - conftest.py: function-scoped in-memory SQLite engine per test (no rollbacks, CI-safe)
+   - test_models.py (new): 20 unit tests — validators, field constraints, defaults (no HTTP)
+   - test_routes.py: 31 integration tests — full HTTP → DB → response for all 6 endpoints
+   - Result: 51 tests, 95% coverage, all passing
+
+2. CODE FIXES (mypy + Supabase)
+   - database.py: added explicit `dict[str, Any]` annotation to fix mypy type conflict
+   - main.py: fixed `completed: bool = None` → `Optional[bool] = None`
+   - database.py: added postgres:// → postgresql:// URL normalisation (SQLAlchemy 2.x requirement)
+   - database.py: added pool_pre_ping=True (handles Supabase idle connection drops after ~5 min)
+   - mypy.ini created, mypy==1.8.0 added to requirements.txt
+
+3. CI/CD PIPELINE (.github/workflows/ci.yml)
+   - CI: lint (ruff) + type-check (mypy) + test (pytest) — run in parallel
+   - CD: build Docker image → push to ECR (:sha + :latest) → deploy to ECS Fargate
+   - CD only triggers on push to main (not PRs)
+   - ECS deploy waits for service stability before marking success
+   - Coverage threshold enforced at 80% (--cov-fail-under=80)
+
+4. AWS INFRASTRUCTURE (via CLI, ap-south-1)
+   - ECR repository created (task-api)
+   - ECS cluster created (task-api-cluster, Fargate)
+   - CloudWatch log group created (/ecs/task-api)
+   - ECS task definition registered (task-api-task, 0.25 vCPU, 0.5GB RAM)
+   - Security group created (task-api-sg, inbound TCP 8000 open)
+   - ECS service created (task-api-service, desired count 1, rolling deploy)
+
+5. IAM SETUP
+   - Stopped using root account for deployments
+   - Created github-actions-deployer IAM user (programmatic access only)
+   - Attached least-privilege policy: ECR push + ECS deploy + iam:PassRole
+   - ecsTaskExecutionRole trust relationship fixed (ecs-tasks.amazonaws.com principal)
+   - iam:PassRole added to both amna-admin and github-actions-deployer users
+   - Root account MFA enabled
+
+6. DOCUMENTATION
+   - CLAUDE.md created at repo root (project context for future Claude sessions)
+   - README.md rewritten as full professional reference documentation
+   - Memory saved: never write secrets/account IDs/ARNs to tracked files
+
+ISSUES HIT AND HOW THEY WERE RESOLVED
+--------------------------------------
+- ECS tasks not starting (taskArns empty):
+  Root cause: ecsTaskExecutionRole trust relationship missing ecs-tasks.amazonaws.com
+  Fix: aws iam update-assume-role-policy + aws iam put-user-policy (iam:PassRole)
+
+- ECR had no image on first deploy:
+  Root cause: pipeline hadn't run yet, ECS had nothing to pull
+  Fix: manual docker build + push to ECR before creating the service
+
+- mypy errors in database.py:
+  Root cause: dict type inferred from SQLite branch conflicted with PostgreSQL branch
+  Fix: explicit `connect_args: dict[str, Any]` annotation before the if block
+
+SECRETS RULE (important)
+------------------------
+Never write AWS account IDs, ARNs, profile names, access keys, or any sensitive
+values into CLAUDE.md, README.md, or any tracked file. Use placeholders only.
+DATABASE_URL lives in the ECS task definition, not GitHub or any local file 
+still preferred to use aws secret keys to store this instead of tesk_definition 
+
+GITHUB ACTIONS VARIABLES NEEDED
+--------------------------------
+Secrets: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+Variables: AWS_REGION, ECR_REPOSITORY, ECS_CLUSTER, ECS_SERVICE,
+           ECS_TASK_DEFINITION, CONTAINER_NAME
+
+FINAL STATE
+-----------
+- CI pipeline: passing (lint + mypy + 51 tests)
+- CD pipeline: written and ready, triggers on merge to main
+- App: deployed and running on ECS Fargate, connected to Supabase
+- Health check: http://<PUBLIC_IP>:8000/health → {"status":"healthy","version":"1.0.0"}
+- Every future push to main: fully automated build + deploy, zero manual steps
